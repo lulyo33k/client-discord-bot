@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Client Discord - Bot / Webhook</title>
+<style>
+  :root {
+    --bg: #313338;
+    --panel: #2b2d31;
+    --input: #1e1f22;
+    --text: #f2f3f5;
+    --muted: #949ba4;
+    --accent: #5865f2;
+    --accent-hover: #4752c4;
+    --danger: #da373c;
+    --success: #23a55a;
+    --border: #1e1f22;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .app {
+    width: 100%;
+    max-width: 560px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .subtitle {
+    color: var(--muted);
+    font-size: 13px;
+    margin: 0 0 20px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    background: var(--input);
+    padding: 4px;
+    border-radius: 8px;
+  }
+  .tab {
+    flex: 1;
+    padding: 8px;
+    text-align: center;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    user-select: none;
+  }
+  .tab.active {
+    background: var(--accent);
+    color: white;
+  }
+  .panel {
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 20px;
+  }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  label:first-child { margin-top: 0; }
+  input, textarea, select {
+    width: 100%;
+    background: var(--input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 10px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea {
+    min-height: 90px;
+    resize: vertical;
+  }
+  .row {
+    display: flex;
+    gap: 10px;
+  }
+  .row > div { flex: 1; }
+  button.send {
+    margin-top: 20px;
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.send:hover { background: var(--accent-hover); }
+  button.send:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status {
+    margin-top: 12px;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 4px;
+    display: none;
+  }
+  .status.ok {
+    display: block;
+    background: rgba(35,165,90,0.15);
+    color: var(--success);
+  }
+  .status.err {
+    display: block;
+    background: rgba(218,55,60,0.15);
+    color: var(--danger);
+  }
+  .note {
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+    background: rgba(255,255,255,0.03);
+    padding: 10px;
+    border-radius: 4px;
+  }
+  .avatar-row {
+    display: flex;
+    gap: 10px;
+  }
+  .hint {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Client Discord</h1>
+  <p class="subtitle">Envoie des messages a la place d'un bot ou via un webhook</p>
+
+  <div class="tabs">
+    <div class="tab active" data-mode="webhook">Webhook</div>
+    <div class="tab" data-mode="bot">Bot (token)</div>
+  </div>
+
+  <!-- WEBHOOK PANEL -->
+  <div class="panel" id="panel-webhook">
+    <label>URL du webhook</label>
+    <input type="text" id="wh-url" placeholder="https://discord.com/api/webhooks/..." autocomplete="off">
+
+    <div class="row">
+      <div>
+        <label>Nom affiche (optionnel)</label>
+        <input type="text" id="wh-username" placeholder="Nom du bot" autocomplete="off">
+      </div>
+      <div>
+        <label>Avatar URL (optionnel)</label>
+        <input type="text" id="wh-avatar" placeholder="https://..." autocomplete="off">
+      </div>
+    </div>
+
+    <label>Message</label>
+    <textarea id="wh-message" placeholder="Ecris ton message ici..."></textarea>
+
+    <button class="send" id="wh-send">Envoyer</button>
+    <div class="status" id="wh-status"></div>
+
+    <div class="note">
+      Un webhook n'a pas besoin de token de bot. Cree-le dans Discord :
+      Parametres du salon &gt; Integrations &gt; Webhooks &gt; Nouveau webhook, puis copie l'URL ici.
+      Ca fonctionne directement depuis le navigateur.
+    </div>
+  </div>
+
+  <!-- BOT PANEL -->
+  <div class="panel" id="panel-bot" style="display:none;">
+    <label>Token du bot</label>
+    <input type="password" id="bot-token" placeholder="Votre token de bot" autocomplete="off">
+
+    <label>ID du salon (channel ID)</label>
+    <input type="text" id="bot-channel" placeholder="123456789012345678" autocomplete="off">
+
+    <label>Message</label>
+    <textarea id="bot-message" placeholder="Ecris ton message ici..."></textarea>
+
+    <button class="send" id="bot-send">Envoyer</button>
+    <div class="status" id="bot-status"></div>
+
+    <div class="note">
+      Attention : l'API Discord bloque generalement les appels directs depuis un navigateur (CORS)
+      quand on utilise un token de bot, contrairement aux webhooks. Si l'envoi echoue avec une
+      erreur reseau/CORS, il faudra passer par un petit serveur relais (proxy) qui transmet la
+      requete a discord.com avec le header Authorization. Le webhook reste la solution la plus
+      simple pour un client 100% navigateur. Ne partage jamais ton token, il donne un acces total au bot.
+    </div>
+  </div>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = { webhook: document.getElementById('panel-webhook'), bot: document.getElementById('panel-bot') };
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const mode = tab.dataset.mode;
+      panels.webhook.style.display = mode === 'webhook' ? 'block' : 'none';
+      panels.bot.style.display = mode === 'bot' ? 'block' : 'none';
+    });
+  });
+
+  function showStatus(el, msg, ok) {
+    el.textContent = msg;
+    el.className = 'status ' + (ok ? 'ok' : 'err');
+  }
+
+  // ---- WEBHOOK SEND ----
+  document.getElementById('wh-send').addEventListener('click', async () => {
+    const url = document.getElementById('wh-url').value.trim();
+    const content = document.getElementById('wh-message').value.trim();
+    const username = document.getElementById('wh-username').value.trim();
+    const avatar = document.getElementById('wh-avatar').value.trim();
+    const statusEl = document.getElementById('wh-status');
+    const btn = document.getElementById('wh-send');
+
+    if (!url) { showStatus(statusEl, "Renseigne l'URL du webhook.", false); return; }
+    if (!content) { showStatus(statusEl, "Le message est vide.", false); return; }
+
+    const payload = { content };
+    if (username) payload.username = username;
+    if (avatar) payload.avatar_url = avatar;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok || res.status === 204) {
+        showStatus(statusEl, 'Message envoye.', true);
+        document.getElementById('wh-message').value = '';
+      } else {
+        const txt = await res.text();
+        showStatus(statusEl, 'Erreur ' + res.status + ' : ' + txt, false);
+      }
+    } catch (e) {
+      showStatus(statusEl, 'Erreur reseau : ' + e.message, false);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
